@@ -1,0 +1,3 @@
+# diagnostico-excel
+
+(pendiente)

@@ -1,0 +1,3 @@
+# entidades-reglas-negocio
+
+(pendiente)

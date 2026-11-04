@@ -1,0 +1,25 @@
+# Datos originales con nombres reales
+*.xlsm
+*.xlsx
+*.xls
+datos_originales/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Credenciales y configuración local
+.env
+*.local
+
+# DBeaver / IDE
+.dbeaver/
+.vscode/
+.idea/
+
+# Sistema
+.DS_Store
+Thumbs.db
+*.log
