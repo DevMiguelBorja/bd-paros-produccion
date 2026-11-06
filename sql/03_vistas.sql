@@ -1,4 +1,6 @@
 
+-- 03_vistas.sql  |  Vistas de negocio que reproducen los indicadores del Excel
+
 SET search_path TO paros;
 
 -- 1. Resumen por registro: horas de paro y productividad de cada turno.
@@ -25,30 +27,29 @@ LEFT JOIN (SELECT id_registro, SUM(minutos) AS minutos_paro
            FROM paro GROUP BY id_registro) p ON p.id_registro = r.id_registro;
 
 -- 2. Productividad por máquina y mes (gráfico "Producción general / por máquina").
---    Solo cuentan los registros con horas trabajadas (los días sin programar no entran).
+--    Misma fórmula que la tabla dinámica del Excel: 1 - SUM(horas de paro) / SUM(horas trabajadas),
+--    sumando TODOS los registros (verificado contra TD_prodMaq: Vinilos_2, 2024).
 CREATE OR REPLACE VIEW v_productividad_maquina_mes AS
 SELECT anio, mes, maquina,
        SUM(horas_trabajadas)                                          AS horas_trabajadas,
        ROUND(SUM(horas_paro), 2)                                      AS horas_paro,
        ROUND(100 * SUM(horas_productivas) / NULLIF(SUM(horas_trabajadas), 0), 2) AS productividad_pct
 FROM v_registro_resumen
-WHERE horas_trabajadas > 0
 GROUP BY anio, mes, maquina;
 
 -- 3. Participación de cada código de paro sobre las horas trabajadas (gráfico "% Códigos de paro").
+--    Verificado contra TD_prodCodigo (Vinilos_2, 2024): código 16 = 11,88 %, código 05 = 5,99 %.
 CREATE OR REPLACE VIEW v_participacion_codigo AS
 WITH base AS (
     SELECT EXTRACT(YEAR FROM fecha)::INT AS anio, id_maquina,
            SUM(horas_trabajadas) AS horas_trab
     FROM registro_produccion
-    WHERE horas_trabajadas > 0
     GROUP BY 1, 2
 ), paros AS (
     SELECT EXTRACT(YEAR FROM r.fecha)::INT AS anio, r.id_maquina, p.id_codigo,
            SUM(p.minutos) / 60.0 AS horas_paro
     FROM paro p
     JOIN registro_produccion r ON r.id_registro = p.id_registro
-    WHERE r.horas_trabajadas > 0
     GROUP BY 1, 2, 3
 )
 SELECT p.anio,
