@@ -15,13 +15,6 @@ Uso:
     python migracion/migrar.py --cargar           # además carga en PostgreSQL
     python migracion/migrar.py --cargar --limpiar # vacía antes las tablas transaccionales
     python migracion/migrar.py --conservar-duplicados
-
-Requisitos previos: ejecutar sql/01_ddl.sql ... sql/04_catalogos.sql y colocar el Excel en
-datos_originales/ (carpeta ignorada por Git).
-
-Datos personales: los nombres reales NUNCA se escriben en los CSV públicos. Se reemplazan por
-seudónimos (OPERARIO-001, MANTENIMIENTO-001...) y la correspondencia queda en
-migracion/privado/ (ignorada por Git).
 """
 from __future__ import annotations
 
@@ -49,12 +42,8 @@ DIR_PRIVADO = RAIZ / "migracion" / "privado"
 EQUIVALENCIAS = DIR_PRIVADO / "equivalencias_personas.csv"
 
 HOJA = "Base De Datos"
-FILA_ENCABEZADO = 8          # el encabezado está en la fila 9 de Excel (índice 8)
-PRIMERA_FILA_EXCEL = 10      # primera fila de datos en Excel
-
-# --------------------------------------------------------------------------------------
-# Reglas de limpieza (mapeos)
-# --------------------------------------------------------------------------------------
+FILA_ENCABEZADO = 8          
+PRIMERA_FILA_EXCEL = 10     
 
 
 def k(texto) -> str:
@@ -404,6 +393,9 @@ def transformar(df: pd.DataFrame, conservar_duplicados: bool) -> dict:
         marca, vol, col = parsear_referencia(nombre)
         filas_ref.append((nombre, marca, vol, col))
     referencia = pd.DataFrame(filas_ref, columns=["nombre_original", "marca", "volumen_cc", "num_colores"])
+    # Con valores vacíos pandas los vuelve decimales (22.0); se fuerza a entero nulable
+    referencia["volumen_cc"] = referencia["volumen_cc"].astype("Int64")
+    referencia["num_colores"] = referencia["num_colores"].astype("Int64")
     ctx["referencias_sin_parsear"] = [r[0] for r in filas_ref if r[1] is None]
 
     # --- Validaciones previas a la carga (fallar aquí es mejor que fallar en la base de datos)
